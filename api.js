@@ -19,15 +19,11 @@ module.exports = class {
 
     _call(method, params, callback) {
         return (async () => {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    const result = await rp([apiPackedUrl, method].join('/'))
-
-                    resolve(result)
-                } catch (err) {
-                    reject(err)
-                }       
-            })
+            try {
+                return await rp([apiPackedUrl, method].join('/'))
+            } catch (err) {
+                throw err
+            }      
         })()
     }
 }
