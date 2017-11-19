@@ -1,0 +1,34 @@
+{
+  "name": "vknode",
+  "version": "0.1.0",
+  "description": "Library for working with VK API",
+  "main": "main.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zaur-Lumanov/vknode.git"
+  },
+  "keywords": [
+    "vk",
+    "node",
+    "js",
+    "api",
+    "lib",
+    "library",
+    "vk.com",
+    "dev",
+    "vkontakte",
+    "sdk"
+  ],
+  "author": "Zaur_Lumanov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Zaur-Lumanov/vknode/issues"
+  },
+  "homepage": "https://github.com/Zaur-Lumanov/vknode#readme"
+}
