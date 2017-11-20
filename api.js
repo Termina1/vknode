@@ -26,4 +26,14 @@ module.exports = class {
             }      
         })()
     }
+
+    call(method, params, callback) {
+        return (async () => {
+            try {
+                return await _call(method, params, callback)
+            } catch (err) {
+                throw err
+            }
+        })()
+    }
 }
