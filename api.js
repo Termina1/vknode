@@ -1,5 +1,6 @@
 const rp = require('request-promise')
 const qs = require('qs')
+const md5 = require('md5')
 
 const
     apiUrl = {
@@ -19,7 +20,7 @@ module.exports = class API {
         this.limit = 3
         this.rejection = true
         this.info = {}
-            //this.version = apiUrl.version
+        this.version = apiUrl.version
         this.errorHandler = () => {}
     }
 
@@ -30,19 +31,24 @@ module.exports = class API {
     check(app_data = {}) {
         this.call('groups.getById')
             .then(response => {
-                console.log(response)
                 if (response.length) {
-                    console.log(response[0])
                     this.info = {
                         group_id: response[0].gid,
+                        name: response[0].name,
+                        screen_name: response[0].screen_name,
+                        is_closed: response[0].is_closed,
+                        type: response[0].type,
+                        photo: {
+                            origin: response[0].photo,
+                            medium: response[0].photo_medium,
+                            big: response[0].photo_big
+                        }
                     }
 
                     this.resetInterval(20)
-                    console.log(this.info)
                 }
             })
             .catch(error => {
-                console.log(error)
                 this.call('users.get')
                     .then(response => {
                         if (response.length) {
@@ -148,6 +154,12 @@ module.exports = class API {
             params = {}
         }
 
+        if (this.interval === undefined) {
+            this.checkQueue()
+
+            this.interval = setInterval(() => this.checkQueue(), 1000 / this.limit)
+        }
+
         if (callback) {
             this.queries.push({
                 conf: {
@@ -169,12 +181,6 @@ module.exports = class API {
                     reject
                 })
             })
-        }
-
-        if (this.interval === undefined) {
-            this.checkQueue()
-
-            this.interval = setInterval(() => this.checkQueue(), 1000 / this.limit)
         }
     }
 
