@@ -246,4 +246,8 @@ module.exports = class API {
             }
         }
     }
+
+    async execute(code, callback) {
+        return await this.call('execute', { code }, callback)
+    }
 }
