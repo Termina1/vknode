@@ -98,12 +98,18 @@ module.exports = class LongPoll extends EventEmmiter {
             this.ts = ts
 
             updates.forEach((update) => {
-                const eventID = update.shift()
+                const
+                    eventID = update.shift(),
+                    params = {}
+
+                for (const key in update) {
+                    params[eventStruct[eventID][key]] = update[key]
+                }
 
                 if (this.eventNames().indexOf(eventID) != -1) {
 
 
-                    this.emit(eventID, update)
+                    this.emit(eventID, params)
                 }
             })
 
