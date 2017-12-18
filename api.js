@@ -3,6 +3,7 @@ const qs = require('qs')
 const md5 = require('md5')
 
 const LongPoll = require('./longpoll')
+const CallbackAPI = require('./callback-api')
 
 const
     apiUrl = {
@@ -249,5 +250,13 @@ module.exports = class API {
 
     async execute(code, callback) {
         return await this.call('execute', { code }, callback)
+    }
+
+    async procedure(name, args, callback) {
+        return await this.call(`execute.${name}`, args, callback)
+    }
+
+    callback(config) {
+        return new CallbackAPI(config)
     }
 }

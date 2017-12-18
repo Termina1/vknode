@@ -1,4 +1,4 @@
-const EventEmmiter = require('events')
+const EventEmitter = require('events')
 const rp = require('request-promise')
 
 const wait = 25
@@ -46,7 +46,7 @@ const dFlags = {
     UNANSWERED: 2
 }
 
-module.exports = class LongPoll extends EventEmmiter {
+module.exports = class LongPoll extends EventEmitter {
     constructor(self) {
         super()
 
