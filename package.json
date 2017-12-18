@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/Zaur-Lumanov/vknode#readme",
   "dependencies": {
+    "events": "^1.1.1",
     "lightbench": "^1.0.1",
     "md5": "^2.2.1",
     "request": "^2.83.0",

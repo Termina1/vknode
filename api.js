@@ -2,6 +2,8 @@ const rp = require('request-promise')
 const qs = require('qs')
 const md5 = require('md5')
 
+const LongPoll = require('./longpoll')
+
 const
     apiUrl = {
         protocol: 'https',
@@ -22,6 +24,17 @@ module.exports = class API {
         this.info = {}
         this.version = apiUrl.version
         this.errorHandler = () => {}
+
+        Object.defineProperty(this, "longpoll", {
+            enumerable: false,
+            get: () => {
+                if (!this.lp) {
+                    this.lp = new LongPoll(this)
+                }
+
+                return this.lp
+            }
+        })
     }
 
     setVersion(version) {
@@ -122,7 +135,7 @@ module.exports = class API {
 
     async _call(method, params) {
         params.access_token = this.token
-            // params.v = this.version
+        params.v = this.version
 
         if (params instanceof Object) {
             for (const key in params) {
