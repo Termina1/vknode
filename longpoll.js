@@ -99,15 +99,13 @@ module.exports = class LongPoll extends EventEmmiter {
 
             updates.forEach((update) => {
                 const
-                    eventID = update.shift(),
+                    eventID = update.shift().toString(),
                     params = {}
 
-                for (const key in update) {
-                    params[eventStruct[eventID][key]] = update[key]
-                }
-
-                if (this.eventNames().indexOf(eventID) != -1) {
-
+                if (this.eventNames().indexOf(eventID) !== -1) {
+                    for (const key in update) {
+                        params[eventStruct[eventID][key]] = update[key]
+                    }
 
                     this.emit(eventID, params)
                 }

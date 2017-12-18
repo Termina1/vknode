@@ -13,11 +13,9 @@ const
     },
     apiPackedUrl = `${apiUrl.protocol}://${apiUrl.domain}${apiUrl.path}`
 
-const TYPE = { callback: 0, promise: 1 }
-
 module.exports = class API {
     constructor(token) {
-        this.token = token ? token : ''
+        this.token = token || ''
         this.queries = []
         this.limit = 3
         this.rejection = true
@@ -175,9 +173,6 @@ module.exports = class API {
 
         if (callback) {
             this.queries.push({
-                conf: {
-                    type: TYPE.callback
-                },
                 method,
                 params,
                 callback
@@ -185,9 +180,6 @@ module.exports = class API {
         } else {
             return new Promise((resolve, reject) => {
                 this.queries.push({
-                    conf: {
-                        type: TYPE.promise
-                    },
                     method,
                     params,
                     resolve,
