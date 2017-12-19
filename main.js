@@ -1,1 +1,1 @@
-exports.API = require('./api.js')
+exports.API = require('./lib/api.js')
