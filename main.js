@@ -1,1 +1,2 @@
-exports.API = require('./lib/api.js')
+exports.API = require('./lib/api/api.js')
+exports.Auth = require('./lib/auth/auth.js')
