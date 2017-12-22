@@ -52,6 +52,7 @@ module.exports = class LongPoll extends EventEmitter {
     constructor(self) {
         super()
 
+        self.flags = flags
         this.self = self
 
         this.updateServer()
@@ -110,7 +111,15 @@ module.exports = class LongPoll extends EventEmitter {
                     }
 
                     if (eventID == 4 && this.self.messageProcessing) {
-                        return this.emit(eventID, new Message(params))
+                        const message = new Message(params, this.self)
+
+                        if (this.self.inboundProcessing) {
+                            if (message.check(flags.OUTBOX)) {
+                                return
+                            }
+                        }
+
+                        return this.emit(eventID, message)
                     }
 
                     this.emit(eventID, params)

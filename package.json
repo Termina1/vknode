@@ -1,6 +1,6 @@
 {
     "name": "vknode",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "description": "Library for working with VK API",
     "main": "main.js",
     "directories": {
@@ -35,7 +35,6 @@
         "body-parser": "^1.18.2",
         "events": "^1.1.1",
         "express": "^4.16.2",
-        "lightbench": "^1.0.1",
         "md5": "^2.2.1",
         "request": "^2.83.0",
         "request-promise": "^4.2.2"

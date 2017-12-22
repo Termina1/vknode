@@ -1,9 +1,10 @@
 const rp = require('request-promise')
 const qs = require('qs')
+const fs = require('fs')
 const md5 = require('md5')
 
-const LongPoll = require('./longpoll/longpoll')
-const CallbackAPI = require('./callback-api/callback-api')
+const LongPoll = require('./longpoll')
+const CallbackAPI = require('./callback-api')
 const MessageConstructor = require('./messages/constructor')
 
 const
@@ -35,6 +36,8 @@ module.exports = class API {
                 return this.lp
             }
         })
+
+        this.loadErrors('en')
     }
 
     version(version) {
@@ -45,6 +48,21 @@ module.exports = class API {
 
     pack() {
         this.packer = !this.packer
+
+        return this
+    }
+
+    lang(language) {
+        this.language = language
+
+        switch (language) {
+            case 'ru':
+                {
+                    this.loadErrors(language)
+
+                    break
+                }
+        }
 
         return this
     }
@@ -122,6 +140,14 @@ module.exports = class API {
         return this
     }
 
+    loadErrors(lang) {
+        try {
+            this.errors = JSON.parse(fs.readFileSync(`assets/errors-${lang}.json`, 'UTF-8'))
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
     setErrorHandler(rejection, handler) {
         this.errorHandler = handler
         this.rejection = rejection
@@ -145,16 +171,24 @@ module.exports = class API {
         params.access_token = this.token
         params.v = this._version
 
+        if (this.language) {
+            params.lang = this.language
+        }
+
         if (params instanceof Object) {
             for (const key in params) {
                 if (Array.isArray(params[key])) {
                     params[key] = params[key].join(',')
                 } else if (params[key] instanceof Object) {
-                    params[key] = JSON.stringify(params[key])
+                    try {
+                        params[key] = JSON.stringify(params[key])
+                    } catch (err) {
+                        delete params[key]
+                    }
                 } else if (params[key] instanceof Boolean) {
                     params[key] = params[key] ? 1 : 0
                 } else if (params[key] === null || params[key] === undefined || params[key] === Infinity) {
-                    params[key] = ''
+                    delete params[key]
                 }
             }
         }
@@ -200,10 +234,34 @@ module.exports = class API {
     }
 
     createError(error) {
-        const err = new Error
+        if (typeof this.errors == 'object' && this.errors.length) {
+            this.errors.forEach((object) => {
+                switch (object.code) {
+                    case 100:
+                        {
+                            return
+                        }
+                }
+
+                if (object.code == error.error_code) {
+                    error.error_msg = object.text
+
+                    if (object.solution) {
+                        error.solution = object.solution
+                    }
+
+                    return
+                }
+            })
+        }
+
+        const err = new Error(error.error_msg)
+
+        if (error.solution) {
+            err.message = error.solution
+        }
 
         err.code = error.error_code
-        err.message = error.error_msg
 
         if (error.captcha_sid && error.captcha_img) {
             err.captcha = {
@@ -212,7 +270,9 @@ module.exports = class API {
             }
         }
 
-        err.request_params = error.request_params
+        if (error.request_params) {
+            err.request_params = error.request_params
+        }
 
         throw err
     }
@@ -298,15 +358,18 @@ module.exports = class API {
             }
 
             if (this.rejection) {
-                try {
-                    if (isPacked) {
-                        _methodCall.reject(err)
+                if (isPacked && _methodCall) {
+                    _methodCall.reject(err)
 
-                        return
+                    return
+                }
+
+                if (methodCall && typeof methodCall == 'object') {
+                    if (methodCall.reject) {
+                        methodCall.reject(err)
+                    } else {
+                        throw err
                     }
-                    methodCall.reject(err)
-                } catch (err) {
-                    console.error(err)
                 }
             }
         }
@@ -324,9 +387,17 @@ module.exports = class API {
         return new CallbackAPI(config)
     }
 
-    messagesProc() {
+    messagesProc(inboundProcessing) {
         this.messageProcessing = true
 
+        if (inboundProcessing) {
+            this.inboundProcessing = true
+        }
+
         return this
+    }
+
+    message(text = '') {
+        return new MessageConstructor(text, this)
     }
 }
