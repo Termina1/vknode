@@ -34,10 +34,6 @@ module.exports = class Upload {
             group_id
         })
 
-        if (!upload_url) {
-            return
-        }
-
         if (Array.isArray(data.photos)) {
             data.photos.forEach((photo) => {
                 files[`file${Object.keys(files).length+1}`] = this.file(photo)
@@ -81,10 +77,6 @@ module.exports = class Upload {
 
         const { upload_url, album_id, user_id } = await this.self.call('photos.getWallUploadServer', { group_id })
 
-        if (!upload_url) {
-            return
-        }
-
         const response = await rp(upload_url, {
             method: 'POST',
             formData: {
@@ -114,12 +106,135 @@ module.exports = class Upload {
     }
 
     async ownerPhoto(data) {
-        const { upload_url } = await this.self.call('photos.getWallUploadServer', { owner_id: data.group_id ? 0 - data.group_id : null })
+        const { upload_url } = await this.self.call('photos.getOwnerPhotoUploadServer', { owner_id: data.group_id ? 0 - data.group_id : null })
 
-        if (!upload_url) {
-            return
+        const response = await rp(upload_url, {
+            method: 'POST',
+            formData: {
+                photo: this.file(data.photo)
+            },
+            json: true
+        })
+
+        const photo = await this.self.call('photos.saveOwnerPhoto', response)
+
+        if (photo.post_id) {
+            const owner_id = (data.group_id ? 0 - data.group_id : null) || (await this.self.call('users.get'))[0].id
+
+            photo.post = `wall${owner_id}_${photo.post_id}`
         }
 
-        console.log(upload_url)
+        return photo
+    }
+
+    async messagePhoto(data) {
+        const { upload_url, album_id, user_id } = await this.self.call('photos.getMessagesUploadServer', { peer_id: data.peer_id })
+
+        const response = await rp(upload_url, {
+            method: 'POST',
+            formData: {
+                photo: this.file(data.photo)
+            },
+            json: true
+        })
+
+        const [photo] = await this.self.call('photos.saveMessagesPhoto', response)
+
+        photo.attachment = `photo${photo.owner_id}_${photo.id}`
+
+        return photo
+    }
+
+    async chatPhoto(data) {
+        const { upload_url } = await this.self.call('photos.getChatUploadServer', {
+            chat_id: data.chat_id,
+            crop_x: data.crop_x || data.x,
+            crop_y: data.crop_y || data.y,
+            crop_width: data.crop_width || data.width
+        })
+
+        const { response } = await rp(upload_url, {
+            method: 'POST',
+            formData: {
+                file: this.file(data.photo)
+            },
+            json: true
+        })
+
+        const info = await this.self.call('messages.setChatPhoto', { file: response })
+
+        return info
+    }
+
+    async marketPhoto(data) {
+        const { upload_url } = await this.self.call('photos.getChatUploadServer', {
+            group_id: data.group_id,
+            main_photo: data.main_photo || data.main,
+            crop_x: data.crop_x || data.x,
+            crop_y: data.crop_y || data.y,
+            crop_width: data.crop_width || data.width
+        })
+
+        const response = await rp(upload_url, {
+            method: 'POST',
+            formData: {
+                file: this.file(data.photo)
+            },
+            json: true
+        })
+
+        response.group_id = data.group_id
+
+        const [photo] = await this.self.call('photos.saveMarketPhoto', response)
+
+        return photo
+    }
+
+    productPhoto(...data) {
+        return this.marketPhoto(...data)
+    }
+
+    async marketAlbumPhoto(data) {
+        const { upload_url } = await this.self.call('photos.getMarketAlbumUploadServer', { group_id: data.group_id })
+
+        const response = await rp(upload_url, {
+            method: 'POST',
+            formData: {
+                file: this.file(data.photo)
+            },
+            json: true
+        })
+
+        response.group_id = response.gid
+
+        delete response.gid
+
+        const [photo] = await this.self.call('photos.saveMarketAlbumPhoto', response)
+
+        return photo
+    }
+
+    async audio(data) {
+        const { upload_url } = await this.self.call('audio.getUploadServer')
+
+        const file = this.file(data.file)
+
+        const response = await rp(upload_url, {
+            method: 'POST',
+            formData: { file },
+            json: true
+        })
+
+        delete response.redirect
+
+        response.artist = data.artist
+        response.title = data.title === true ? (() => {
+            file.path = file.path.split('/')
+            return file.path[file.path.length - 1]
+        })() : data.title
+
+        const audio = await this.self.call('audio.save', response)
+
+        return audio
     }
 }
