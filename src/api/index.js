@@ -6,6 +6,7 @@ const md5 = require('md5')
 const LongPoll = require('./longpoll')
 const CallbackAPI = require('./callback-api')
 const MessageConstructor = require('./messages/constructor')
+const Upload = require('./upload')
 
 const
     apiUrl = {
@@ -25,6 +26,7 @@ module.exports = class API {
         this.info = {}
         this._version = apiUrl.version
         this.errorHandler = () => {}
+        this.upload = new Upload(this)
 
         Object.defineProperty(this, "longpoll", {
             enumerable: false,
@@ -280,6 +282,8 @@ module.exports = class API {
     checkQueue() {
         if (!this.queries.length) {
             clearInterval(this.interval)
+
+            delete this.interval
 
             return
         }
