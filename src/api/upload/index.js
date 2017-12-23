@@ -112,4 +112,14 @@ module.exports = class Upload {
 
         return photo
     }
+
+    async ownerPhoto(data) {
+        const { upload_url } = await this.self.call('photos.getWallUploadServer', { owner_id: data.group_id ? 0 - data.group_id : null })
+
+        if (!upload_url) {
+            return
+        }
+
+        console.log(upload_url)
+    }
 }
