@@ -230,11 +230,185 @@ module.exports = class Upload {
         response.artist = data.artist
         response.title = data.title === true ? (() => {
             file.path = file.path.split('/')
+
             return file.path[file.path.length - 1]
         })() : data.title
 
         const audio = await this.self.call('audio.save', response)
 
         return audio
+    }
+
+    async video(data) {
+        const video = await this.self.call('video.save', {
+            name: data.name,
+            description: data.description || data.desc || data.descr,
+            is_private: Boolean(data.is_private || data.private),
+            wallpost: Boolean(data.wallpost || data.wall),
+            link: data.link || data.href || data.src || data.source,
+            group_id: data.group_id,
+            album_id: data.album_id,
+            privacy_view: typeof data.privacy_view == 'string' ? data.privacy_view : (Array.isArray(data.privacy_view) ? JSON.stringify(data.privacy_view) : null),
+            privacy_comment: typeof data.privacy_comment == 'string' ? data.privacy_comment : (Array.isArray(data.privacy_comment) ? JSON.stringify(data.privacy_comment) : null),
+            no_comments: Boolean(data.no_comments),
+            repeat: Boolean(data.repeat)
+        })
+
+        const requestData = [video.upload_url, {
+            method: 'POST',
+            formData: {
+                video_file: this.file(data.file || data.video)
+            },
+            json: true
+        }]
+
+        let upload
+
+        if (data.wait) {
+            upload = await rp(...requestData)
+
+            if (upload) {
+                Object.assign(video, upload)
+            }
+        } else {
+            rp(...requestData)
+        }
+
+        delete video.upload_url
+
+        video.attachment = `video${video.owner_id}_${video.video_id}`
+
+        if (video.access_key) {
+            video.attachment += `_${video.access_key}`
+        }
+
+        return video
+    }
+
+    async _doc(data) {
+        const file = this.file(data.file)
+
+        const params = {
+            type: data.type /* doc, audio_message, graffiti */
+        }
+
+        const { upload_url } = await this.self.call(`docs.${data.method}`, params)
+
+        const response = await rp(upload_url, {
+            method: 'POST',
+            formData: { file },
+            json: true
+        })
+
+        const [doc] = await this.self.call('docs.save', {
+            file: response.file,
+            title: data.title === true ? (() => {
+                file.path = file.path.split('/')
+
+                return file.path[file.path.length - 1]
+            })() : data.title,
+            tags: typeof data.tags == 'string' ? data.tags : (Array.isArray(data.tags) ? data.tags.replace(/,/, '\\,').join(',') : null)
+        })
+
+        doc.attachment = `doc${doc.owner_id}_${doc.id}`
+
+        if (doc.access_key) {
+            doc.attachment += `_${doc.access_key}`
+        }
+
+        return doc
+    }
+
+    doc(data) {
+        return this._doc({
+            method: 'getUploadServer',
+            group_id: data.group_id,
+            title: data.data,
+            tags: data.tags,
+            file: data.file || data.doc
+        })
+    }
+
+    wallDoc(data) {
+        return this._doc({
+            method: 'getWallUploadServer',
+            group_id: data.group_id,
+            title: data.data,
+            tags: data.tags,
+            file: data.file || data.doc
+        })
+    }
+
+    messageDoc(data) {
+        return this._doc({
+            method: 'getMessagesUploadServer',
+            peer_id: data.peer_id || data.user_id || (data.group_id ? 0 - data.group_id : (data.chat_id ? 2e9 + data.chat_id : null)),
+            title: data.data,
+            tags: data.tags,
+            file: data.file || data.doc
+        })
+    }
+
+    docs(...data) {
+        return this.doc(...data)
+    }
+
+    wallDocs(...data) {
+        return this.wallDoc(...data)
+    }
+
+    messageDocs(...data) {
+        return this.messageDoc(...data)
+    }
+
+    async cover(data) {
+        const { upload_url } = await this.self.call('photos.getOwnerCoverPhotoUploadServer', {
+            group_id: data.group_id,
+            crop_x: data.crop_x || data.x,
+            crop_y: data.crop_y || data.y,
+            crop_x2: data.crop_x2 || data.x2,
+            crop_y2: data.crop_y2 || data.y2
+        })
+
+        const response = await rp(upload_url, {
+            method: 'POST',
+            formData: {
+                photo: this.file(data.photo || data.cover || data.file)
+            },
+            json: true
+        })
+
+        const photo = await this.self.call('photos.saveOwnerCoverPhoto', response)
+
+        return photo
+    }
+
+    ownerCover(...data) {
+        return this.cover(...data)
+    }
+
+    async story(data) {
+        const type = 0 // dbg
+
+        const { upload_url, user_ids } = await this.self.call(type === 0 ? 'stories.getPhotoUploadServer' : 'stories.getVideoUploadServer', {
+            user_ids: data.user_ids,
+            mask_id: data.mask_id,
+            section_id: data.section_id,
+            add_to_news: Boolean(data.add_to_news || data.news)
+        })
+
+        const { response, error } = await rp(upload_url, {
+            method: 'POST',
+            formData: {
+                [type === 0 ? 'photo' : 'video_file']: this.file(data.file || type === 0 ? data.photo : data.video || data.video_file)
+            },
+            json: true
+        })
+
+        if (error) {
+            return error
+        }
+
+        return response.story
     }
 }

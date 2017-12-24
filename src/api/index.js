@@ -187,7 +187,7 @@ module.exports = class API {
                     } catch (err) {
                         delete params[key]
                     }
-                } else if (params[key] instanceof Boolean) {
+                } else if (typeof params[key] == 'boolean') {
                     params[key] = params[key] ? 1 : 0
                 } else if (params[key] === null || params[key] === undefined || params[key] === Infinity) {
                     delete params[key]
