@@ -1,4 +1,5 @@
 const fs = require('fs')
+const request = require('request')
 const rp = require('request-promise')
 
 // https://vk.com/dev/upload_files
@@ -6,14 +7,33 @@ const rp = require('request-promise')
 module.exports = class Upload {
     constructor(self) {
         this.self = self
+        this.cache = []
     }
 
-    file(file) {
-        if (!(file instanceof fs.ReadStream)) {
-            file = fs.createReadStream(file)
+    async _file(file) {
+        if (file instanceof fs.ReadStream) {
+            return file
+        } else if (typeof file == 'string' && file.match(/https?:\/\/.+/i)) {
+            let filename = file.split('/')
+
+            filename = `./cache/${filename[filename.length - 1]}`
+
+            this.cache.push(filename)
+
+            return new Promise(async(resolve, reject) => {
+                request(file).pipe(fs.createWriteStream(filename)).on('finish', () => {
+                    return resolve(fs.createReadStream(filename))
+                })
+            })
         }
 
+        file = fs.createReadStream(file)
+
         return file
+    }
+
+    _clearCache() {
+        this.cache.forEach(filename => fs.unlink(filename))
     }
 
     async photo(data = {}) {
@@ -35,15 +55,15 @@ module.exports = class Upload {
         })
 
         if (Array.isArray(data.photos)) {
-            data.photos.forEach((photo) => {
-                files[`file${Object.keys(files).length+1}`] = this.file(photo)
+            data.photos.forEach(async(photo) => {
+                files[`file${Object.keys(files).length+1}`] = await this._file(photo)
             })
         } else if (data.photos) {
-            files[`file${Object.keys(files).length+1}`] = this.file(data.photos)
+            files[`file${Object.keys(files).length+1}`] = await this._file(data.photos)
         }
 
         if (data.photo) {
-            files[`file${Object.keys(files).length+1}`] = this.file(data.photo)
+            files[`file${Object.keys(files).length+1}`] = await this._file(data.photo)
         }
 
         const response = await rp(upload_url, {
@@ -80,7 +100,7 @@ module.exports = class Upload {
         const response = await rp(upload_url, {
             method: 'POST',
             formData: {
-                photo: this.file(data.photo)
+                photo: await this._file(data.photo)
             },
             json: true
         })
@@ -111,7 +131,7 @@ module.exports = class Upload {
         const response = await rp(upload_url, {
             method: 'POST',
             formData: {
-                photo: this.file(data.photo)
+                photo: await this._file(data.photo)
             },
             json: true
         })
@@ -133,7 +153,7 @@ module.exports = class Upload {
         const response = await rp(upload_url, {
             method: 'POST',
             formData: {
-                photo: this.file(data.photo)
+                photo: await this._file(data.photo)
             },
             json: true
         })
@@ -156,7 +176,7 @@ module.exports = class Upload {
         const { response } = await rp(upload_url, {
             method: 'POST',
             formData: {
-                file: this.file(data.photo)
+                file: await this._file(data.photo)
             },
             json: true
         })
@@ -178,7 +198,7 @@ module.exports = class Upload {
         const response = await rp(upload_url, {
             method: 'POST',
             formData: {
-                file: this.file(data.photo)
+                file: await this._file(data.photo)
             },
             json: true
         })
@@ -200,7 +220,7 @@ module.exports = class Upload {
         const response = await rp(upload_url, {
             method: 'POST',
             formData: {
-                file: this.file(data.photo)
+                file: await this._file(data.photo)
             },
             json: true
         })
@@ -217,7 +237,7 @@ module.exports = class Upload {
     async audio(data) {
         const { upload_url } = await this.self.call('audio.getUploadServer')
 
-        const file = this.file(data.file)
+        const file = await this._file(data.file)
 
         const response = await rp(upload_url, {
             method: 'POST',
@@ -257,7 +277,7 @@ module.exports = class Upload {
         const requestData = [video.upload_url, {
             method: 'POST',
             formData: {
-                video_file: this.file(data.file || data.video)
+                video_file: await this._file(data.file || data.video)
             },
             json: true
         }]
@@ -286,7 +306,7 @@ module.exports = class Upload {
     }
 
     async _doc(data) {
-        const file = this.file(data.file)
+        const file = await this._file(data.file)
 
         const params = {
             type: data.type /* doc, audio_message, graffiti */
@@ -373,7 +393,7 @@ module.exports = class Upload {
         const response = await rp(upload_url, {
             method: 'POST',
             formData: {
-                photo: this.file(data.photo || data.cover || data.file)
+                photo: await this._file(data.photo || data.cover || data.file)
             },
             json: true
         })
@@ -400,13 +420,19 @@ module.exports = class Upload {
         const { response, error } = await rp(upload_url, {
             method: 'POST',
             formData: {
-                [type === 0 ? 'photo' : 'video_file']: this.file(data.file || type === 0 ? data.photo : data.video || data.video_file)
+                [type === 0 ? 'photo' : 'video_file']: await this._file(data.file || type === 0 ? data.photo : data.video || data.video_file)
             },
             json: true
         })
 
         if (error) {
             return error
+        }
+
+        response.story.attachment = `story${response.story.owner_id}_${response.story.id}`
+
+        if (response.story.access_key) {
+            response.story.attachment += `_${response.story.access_key}`
         }
 
         return response.story
