@@ -89,3 +89,4 @@ $RECYCLE.BIN/
 # Testing
 test.js
 test
+cache/*
