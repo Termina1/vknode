@@ -237,7 +237,7 @@ module.exports = class Upload {
     async audio(data) {
         const { upload_url } = await this.self.call('audio.getUploadServer')
 
-        const file = await this._file(data.file)
+        const file = await this._file(data.file || data.audio || data.track)
 
         const response = await rp(upload_url, {
             method: 'POST',

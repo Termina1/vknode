@@ -15,6 +15,12 @@ module.exports = class Message {
             delete this.attachments.title
         }
 
+        this.out = this.check(2)
+
+        if (!this.out) {
+            this.sender_id = this.peer_id > 2e9 ? +this.attachments.from : this.peer_id
+        }
+
         this.date = new Date(this.timestamp * 1000)
 
         if (!Object.keys(this.attachments).length) {
@@ -24,6 +30,51 @@ module.exports = class Message {
 
     check(flag) {
         return Boolean(this.flags & (+flag))
+    }
+
+    pin() {
+        this.self.execute(`return API.messages.pin({"message_id":${this.message_id},"peer_id":${this.peer_id}});`)
+
+        return this
+    }
+
+    unpin() {
+        this.self.execute(`return API.messages.unpin({"message_id":${this.message_id},"peer_id":${this.peer_id}});`)
+
+        return this
+    }
+
+    delete() {
+        this.self.call('messages.delete', {
+            message_ids: this.message_id
+        })
+
+        return this
+    }
+
+    spam() {
+        this.self.call('messages.delete', {
+            message_ids: this.message_id,
+            spam: 1
+        })
+
+        return this
+    }
+
+    restore() {
+        this.self.call('messages.restore', {
+            message_ids: this.message_id
+        })
+
+        return this
+    }
+
+    read() {
+        this.self.call('messages.markAsRead', {
+            message_ids: this.message_id
+        })
+
+        return this
     }
 
     async full() {
