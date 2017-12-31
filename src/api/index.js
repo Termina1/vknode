@@ -144,7 +144,7 @@ module.exports = class API {
 
     loadErrors(lang) {
         try {
-            this.errors = JSON.parse(fs.readFileSync(`assets/errors-${lang}.json`, 'UTF-8'))
+            this.errors = JSON.parse(fs.readFileSync(`./../../assets/errors-${lang}.json`, 'UTF-8'))
         } catch (err) {
             console.error(err)
         }
