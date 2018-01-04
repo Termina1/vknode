@@ -16,7 +16,7 @@ module.exports = class Upload {
         } else if (typeof file == 'string' && file.match(/https?:\/\/.+/i)) {
             let filename = file.split('/')
 
-            filename = `./cache/${filename[filename.length - 1]}`
+            filename = `${__dirname}/../../../cache/${filename[filename.length - 1]}`
 
             this.cache.push(filename)
 
