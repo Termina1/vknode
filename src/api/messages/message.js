@@ -5,8 +5,9 @@ module.exports = class Message {
         Object.assign(this, message)
 
         this.__proto__.self = self
-        this.__proto__.message = (text) => {
-            return new MessageConstructor(text, self, message.peer_id || message.user_id)
+
+        this.__proto__.$ = (text) => {
+            return new MessageConstructor(text, self, message.peer_id || message.user_id, message.message_id)
         }
 
         this.type = this.peer_id > 2e9 ? 'chat' : 'dialog'

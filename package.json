@@ -1,6 +1,6 @@
 {
     "name": "vknode",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Library for working with VK API",
     "main": "main.js",
     "directories": {
