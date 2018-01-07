@@ -12,10 +12,10 @@ const
     apiUrl = {
         protocol: 'https',
         domain: 'api.vk.com',
-        path: '/method',
+        path: 'method',
         version: '5.69'
     },
-    apiPackedUrl = `${apiUrl.protocol}://${apiUrl.domain}${apiUrl.path}`
+    apiPackedUrl = `${apiUrl.protocol}://${apiUrl.domain}/${apiUrl.path}`
 
 module.exports = class API {
     constructor(token) {
@@ -59,6 +59,7 @@ module.exports = class API {
 
         switch (language) {
             case 'ru':
+            case 'en':
                 {
                     this.loadErrors(language)
 
