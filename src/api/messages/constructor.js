@@ -275,8 +275,8 @@ module.exports = class MessageConstructor {
     send() {
         this.peer_id = (arguments[0] ? (typeof arguments[0] != 'function' ? arguments[0] : null) : null) || this.peer
 
-        return new Promise(...args => {
-            this.__proto__.promise = args
+        return new Promise((reject, resolve) => {
+            this.__proto__.promise = [reject, resolve]
 
             if (this.wait === 0) {
                 this._send()

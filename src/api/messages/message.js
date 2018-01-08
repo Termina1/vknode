@@ -10,7 +10,9 @@ module.exports = class Message {
             return new MessageConstructor(text, self, message.peer_id || message.user_id, message.message_id)
         }
 
-        this.type = this.peer_id > 2e9 ? 'chat' : 'dialog'
+        if (this.peer_id > 2e9) {
+            this.chat_id = this.peer_id - 2e9
+        }
 
         if (this.peer_id < 2e9) {
             delete this.attachments.title
@@ -33,14 +35,15 @@ module.exports = class Message {
         return Boolean(this.flags & (+flag))
     }
 
-    pin() {
-        this.self.execute(`return API.messages.pin({"message_id":${this.message_id},"peer_id":${this.peer_id}});`)
+    pin(id, peer) {
+        console.log(`return API.messages.pin({"message_id":${id || this.message_id},"peer_id":${peer || this.peer_id}});`)
+        this.self.execute(`return API.messages.pin({"message_id":${id || this.message_id},"peer_id":${peer || this.peer_id}});`)
 
         return this
     }
 
     unpin() {
-        this.self.execute(`return API.messages.unpin({"message_id":${this.message_id},"peer_id":${this.peer_id}});`)
+        this.self.execute(`return API.messages.unpin({"message_id":${id || this.message_id},"peer_id":${peer || this.peer_id}});`)
 
         return this
     }
